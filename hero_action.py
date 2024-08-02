@@ -37,19 +37,17 @@ class HeroAction:
         
         # Split the action string and take the first part
         action = action.split()[0]
-    
-        match action:
-            case 'Bet':
-                self.bet(button_coordinates, amount)
-            case 'Raise':
-                self.raise_bet(button_coordinates, amount)
-            case 'All':
-                self.all_in(button_coordinates)
-            case 'Call' | 'Fold' | 'Check' | 'Resume' | 'Cash Out':
-                self.click_button(button_coordinates)
-            case _:
-                print(f"{Fore.RED}HeroActions -> execute_action(): Player Action {action} not recognized.")
 
+        if action == 'Bet':
+            self.bet(button_coordinates, amount)
+        elif action == 'Raise':
+            self.raise_bet(button_coordinates, amount)
+        elif action == 'All':
+            self.all_in(button_coordinates)
+        elif action in ['Call', 'Fold', 'Check', 'Resume', 'Cash Out']:
+            self.click_button(button_coordinates)
+        else:
+            print(f"{Fore.RED}HeroActions -> execute_action(): Player Action {action} not recognized.")
 
 
     #-----------------------------------------------------

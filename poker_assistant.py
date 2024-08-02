@@ -6,14 +6,14 @@ import json
 class PokerAssistant:
 
 
-    def __init__( self, openai_client, hero_info, game_statem, hero_action, audio_player ):
+    def __init__( self, hero_info, game_statem, hero_action, audio_player ):
 
         print("Initializing PokerAssistant...")
 
         pygame.init()  # Initialize the pygame module for audio playback
 
 
-        self.client             = openai_client 
+        self.client             = None
 
         self.hero_info          = hero_info
 
@@ -133,101 +133,6 @@ class PokerAssistant:
             # Check if available_actions contains any actions
             actions_prompt = "#Available Actions:\n" + available_actions if available_actions else ""
 
-            response = self.client.chat.completions.create(
-                model=  "gpt-4-1106-preview",
-                #model=  "gpt-3.5-turbo",
-                messages=[
-                    {"role": "system", "content": f"""
-                        You are Hero player. 
-                        Your objective is to analyze real-time online poker data from a 6-max Online Texas Holdem (No Limit, Cash game) and suggest the next action for the hero.
-
-                        {actions_prompt}
-                     
-                        --------------------------
-
-                        #HARD RULES(follow STRICTLY!):
-
-                        - ACTIONS: strictly make decisions based on #Available Actions.
-
-                        - STRATEGY: 
-                        1. Focus on dynamic and unpredictable Exploitative poker strategies, mixed with occational (Game Theory Optimied) GTO plays.
-
-                        - ALL-IN: 
-                        1. Allowed Pre-flop with premium hands if we are likely to steal blinds.
-                        2. When Hero have been Folding a lot Pre-Flop recently and the opponents are likely to fold. 
-
-                        - RAISING: DO NOT raise on the Turn/River when Heros cards don't connect to the board, especially against tight players.
-
-                        - UNPREDICTABILITY: 
-                        1. Always keep opponents guessing by mixing actions between calling, checking, betting and raising, based on the history of Hero actions(if available). 
-                        2. If you recently folded, bet or check instead. If you recently raised, check instead. Occationally bet/raise with weak cards to confuse opponents.
-                        3. Mix up strategy based on history of strategies to confuse, deceive and exploit opponents.
-                        4. Mix up tactics based on history of tactics to confuse, deceive and exploit opponents.
-                        5. Vary bet sizing based on history of bet/raising values to confuse, deceive and exploit opponents.
-
-                        --------------------------
-
-                        #GENERAL GUIDELINES(follow depending on the context)
-                        
-                        - RANGE CONSIDERATION: Be aware of possible ranges of opponents when deciding to bet or raise.
-
-                        - POSITIONAL AWARENESS: Be more aggressive in late positions with strong hands, especially in short-handed situations. Ensure your aggression is calculated and not just based on position.
-
-                        - CHECKING: Occationally Check/Call with strong hands to let other players build the pot and disquise our strong hand.
-
-                        - POT CONTROL: Focus on controlling the pot size to manage risk, especially with marginal hands in late positions(turn, river).
-
-                        - FOLDING: Fold when the odds are against you, especially in response to strong bets from conservative/tight players(that play mostly strong/premium hands).
-
-                        - RAISE AMOUNTS: Adjust your pre-flop raise amounts based on the stakes, action history, number of limpers, your position and any other relevant data. 
-
-                        - BET SIZING: Focus on optimizing bet sizes to maximize value from weaker hands and protect against draws. 
-
-                        - BANKROLL MANAGEMENT: Monitor and manage your stack size, adapting your bet sizing and risk-taking accordingly.
-
-                        - BLUFFING VS VALUE BETTING> Strategically balance bluffing with value betting while considering opponents actions, ranges and tendencies.
-
-                        Note: You tend to over value hands and over bet post-flop, so minimize bet sizing.
-
-                        #Use the following 'strategy'-s:
-                        - GTO
-                        - Exploit
-                        - Mixed
-                     
-                        #Use the following 'tactic'-s: 
-                        - Semi-Bluff
-                        - Bluff
-                        - Probe Bet
-                        - Value Bet
-                        - Check-Raise
-                        - Trap Play
-                        - Floating
-                        - Steal Attempt
-                        - Exploit
-                        - Weak Hand
-                        - None
-
-                        OUTPUT JSON FORMAT:
-                        {
-                            {
-                                "strategy": "string",
-                                "tactic": "string",
-                                "explanation": "Provide short and concise instructions of the strategy and tactics for the next hands.",
-                                "action": "string",
-                                "amount": "number"
-                            }
-                        }
-                    """},
-                    {"role": "user", "content": user_message_prompt}
-                ], 
-               
-                temperature         = 0.2,
-                max_tokens          = 300,
-                top_p               = 0.95,
-                frequency_penalty   = 0,
-                presence_penalty    = 0,
-                response_format     = {"type": "json_object"}
-            )
 
 
             end_time = time.time()  # Record the end time after receiving the response
@@ -236,14 +141,12 @@ class PokerAssistant:
             print("-------------------------------------------------------------------")
             print(f"analyze_game_state_with_gpt4() -> Time taken: {end_time - start_time} seconds")  # Calculate and print the time taken
             # Extract the GPT-4 response
-            gpt_response = response.choices[0].message.content
+            gpt_response = ''
 
             return gpt_response
         
 
-        except self.client.error.OpenAIError as e:
 
-            print(F"{Fore.RED}An error occurred with the OpenAI API: {e}")
 
         except Exception as e:
 
@@ -383,74 +286,20 @@ class PokerAssistant:
 
             print("analyze_players_gpt4() -> Analyzing players with GPT-4 Turbo...")
 
-            response = self.client.chat.completions.create(
-                model=  "gpt-4-1106-preview",
-                messages=[
-                    {"role": "system", "content": """
-                    Your task is to analyze historical game data from a 6-player Texas Holdem Online poker game (No-limit, Cash) to develop strategies for the Hero player to exploit opponents weaknesses. 
-                     
-                    The analysis should be nuanced and comprehensive, taking into account a wide array of behavioral data and patterns( action patterns, action timings, bet sizing, positions, ranges, psychology etc). 
-                    Always use LOGIC and REASONING. 
-                    
-                    #Use the following categories for 'player_style' classification:
-                    
-                    - Tight-Passive (The Rock)
-                    - Loose-Passive (The Calling Station)
-                    - Tight-Aggressive (TAG)
-                    - Loose-Aggressive (LAG)
-                    - Maniac
-                    - Nit
-                    - Hybrid Player
-                    - Shark
-                    - The Fish
-                    - The Grinder
-                    - The Trapper
-                    - The Gambler
-                    
-                    --------------------------------------------------
-                    
-                    #Limitations:
-                    - Do NOT output data for the Hero.
-                     
-                    OUTPUT JSON FORMAT:
-                    {
-                        "players": [
-                            {
-                                "player_number: "number",
-                                "player_id": "string",
-                                "player_style": "string",
-                                "exploitation_strategy": "Actionable, clear and concise instructions for the Hero to exploit this opponent."
-                            },
-                        ]
-                    }
-                    """},
-                    {"role": "user", "content": formatted_data}
-                ],
-                temperature         = 0.1,
-                max_tokens          = 4000,
-                top_p               = 0.95,
-                frequency_penalty   = 0,
-                presence_penalty    = 0,
-                response_format     = {"type": "json_object"}
-            )
-
             end_time = time.time()  # Record the end time after receiving the response
 
             print("-------------------------------------------------------------------")
             print(f"analyze_players_gpt4() -> Time taken: {end_time - start_time} seconds")  # Calculate and print the time taken
             print("-------------------------------------------------------------------")
             # Extract the GPT-4 response
-            gpt_response = response.choices[0].message.content
 
             print("")
             print(f"{Fore.LIGHTYELLOW_EX}-------------------------------------------------------------------")
             print(f"{Fore.LIGHTYELLOW_EX}RAW GTP4 RESPONSE:")
-            print(f"{Fore.LIGHTYELLOW_EX}{gpt_response}")
             print(f"{Fore.LIGHTYELLOW_EX}-------------------------------------------------------------------")
             print("")
 
-            if gpt_response:
-                self.parse_and_update_player_analysis(gpt_response)
+
         
         except Exception as e:
             print(f"An error occurred during GPT-4 analysis: {e}")

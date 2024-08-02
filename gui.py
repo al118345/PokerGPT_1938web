@@ -4,6 +4,9 @@ import tkinter.font as tkFont
 from tkinter        import scrolledtext
 from tkinter        import ttk
 
+from poker_prob.holdem_calc import calculate_odds_villan
+
+
 class GUI:
 
     def __init__( self, game_state, poker_assistant):
@@ -135,7 +138,12 @@ class GUI:
         self.ai_log_info = scrolledtext.ScrolledText(self.root, height=10, width=80, bg='#171821', fg='white', font=self.fontStyle)
         self.ai_log_info.grid(row=9, column=0, columnspan=5, pady=10, padx=10, sticky="nw")
 
-
+        # Round Count and its Entry field
+        self.probabilidad = tk.Label(self.root, text="Probabilidad", font=self.fontStyle, bg='#171821', fg='white')
+        self.probabilidad.grid(row=7, column=0, sticky="w", **padding)
+        self.probabilidad = tk.Text(self.root, height=1, width=input_width, bg='#171821', fg='white',
+                                        font=self.fontStyle)
+        self.probabilidad.grid(row=7, column=1, sticky="w", **padding)
 
     def update_info(self):
         
@@ -153,6 +161,8 @@ class GUI:
             # Handle 'cards' field when it is None or not a list
             cards = player_info.get('cards', [])
             cards_display = ', '.join(cards) if isinstance(cards, list) else 'No Cards'
+            if cards_display is not 'No Cards':
+                cartas_user= cards_display
 
             # Player', 'Status', 'Role', 'Hero', 'Cards 'Turn', 'Action', 'Amount', 'Pot Size', 'Stack Size', 'Won Amount','Total Wins', 'Play Style')
             self.player_tree.insert('', 'end', values=(
@@ -235,6 +245,70 @@ class GUI:
         self.ai_log_info.insert(tk.END, last_added_element)
         self.ai_log_info.see(tk.END)  # Scroll to the end of the log
 
+        from poker.hand import Combo, Range
+
+
+        board = []
+        villan_hand = None
+        exact_calculation = False
+        verbose = True
+        num_sims = 50
+        read_from_file = None
+
+
+        mapeo_palos = {'♦': 'd', '♥': 'h', '♠': 's', '♣': 'c'}
+
+        try:
+            calcular = False
+            cartas = [carta.strip() for carta in cartas_user.split(',')]
+            cartas = [carta[0] + mapeo_palos[carta[1]] for carta in cartas]
+            cadena = ''.join(cartas)
+            try:
+                if cadena_antigua != cadena:
+                    cadena_antigua = cadena
+                    calcular = True
+
+            except:
+                cadena_antigua = cadena
+                calcular = True
+                pass
+            hero_hand = Combo(cadena)
+
+
+            # Dividir la cadena por las comas y eliminar los espacios en blanco
+            try:
+                cartas = [carta.strip() for carta in community_cards.split(',')]
+
+                # Reemplazar los caracteres de los palos por sus respectivas letras en inglés
+                cartas = [carta[0] + mapeo_palos[carta[1]] for carta in cartas]
+                try:
+                    if board_antiguo != cartas:
+                        board_antiguo = cartas
+                        calcular = True
+
+                except:
+                    board_antiguo = cartas
+                    calcular = True
+                    pass
+            except:
+                cartas = []
+
+
+            if calcular:
+                odds = calculate_odds_villan(cartas, exact_calculation,
+                                                         num_sims, read_from_file,
+                                                         hero_hand, villan_hand,
+                                                         verbose, num_player=6, print_elapsed_time=True)
+
+                odds = odds[0]
+                odds = str(round(odds['win'],2)) + '|' +  str(round(odds['lose'],2))
+                self.probabilidad.delete("1.0", tk.END)
+                self.probabilidad.insert('1.0', odds)
+        except Exception as e:
+            print(e)
+            odds = "No se pudo calcular la probabilidad"
+            self.probabilidad.delete("1.0", tk.END)
+            self.probabilidad.insert('1.0', odds)
 
 
     def polling_update(self):

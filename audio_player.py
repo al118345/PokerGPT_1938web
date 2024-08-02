@@ -5,11 +5,11 @@ from pathlib import Path
 
 class AudioPlayer:
 
-    def __init__(self, openai_client):
+    def __init__(self):
 
         pygame.mixer.init()
 
-        self.client             = openai_client
+        self.client             = None
 
         self.audio_base_path    = 'Audio/'                              # Set the path to the audio files directory
 

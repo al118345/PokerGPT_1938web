@@ -11,7 +11,7 @@ from audio_player           import AudioPlayer
 from read_poker_table       import ReadPokerTable
 from hero_hand_range        import PokerHandRangeDetector
 from hero_info              import HeroInfo
-
+openai_activo = False
 def main():
 
     # Ask the user for the hero player number ( 1- 6 , starting from bottom(1))
@@ -26,8 +26,9 @@ def main():
             print("Invalid input. Please enter a number.")
 
 
+
     api_key                 = os.getenv('OPENAI_API_KEY')
-    openai_client           = openai.OpenAI(api_key=api_key)
+    #openai_client           = openai.OpenAI(api_key=api_key)
     poker_window            = locate_poker_window()
     init(autoreset=True)
 
@@ -35,14 +36,14 @@ def main():
     
     if poker_window is not None:
 
-        audio_player            = AudioPlayer( openai_client )
+        audio_player            = AudioPlayer(  )
         hero_action             = HeroAction( poker_window )
         
         hero_info               = HeroInfo()
         hero_hand_range         = PokerHandRangeDetector()
 
         game_state              = GameState( hero_action, audio_player )
-        poker_assistant         = PokerAssistant( openai_client, hero_info, game_state, hero_action, audio_player )
+        poker_assistant         = PokerAssistant(  hero_info, game_state, hero_action, audio_player )
        
         gui                     = GUI( game_state, poker_assistant )
         read_poker_table        = ReadPokerTable( poker_window, hero_info, hero_hand_range, hero_action, poker_assistant, game_state )
@@ -66,11 +67,10 @@ def main():
 def locate_poker_window():
     """Locate the poker client window."""
 
-    windows = gw.getWindowsWithTitle("No Limit")
+    windows = gw.getWindowsWithTitle("Hold'")
 
     for window in windows:
 
-        if "USD" in window.title or "Money" in window.title:
 
             print(f"Poker client window found. Size: {window.width}x{window.height}")
 

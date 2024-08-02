@@ -34,9 +34,9 @@ class ReadPokerTable:
 
         self.poker_assistant        = poker_assistant
 
-        self.save_screenshots       = False
+        self.save_screenshots       = True
 
-        self.tesseract_cmd          = r'C:\Users\Admin\Desktop\PokerGPT\tesseract\tesseract.exe'
+        self.tesseract_cmd          = r'C:\Users\ruben\PycharmProjects\PokerGPT\tesseract\tesseract.exe'
 
         self.cards_on_table         = False
 
@@ -836,9 +836,9 @@ class ReadPokerTable:
         #Player Cards1: 0.816, 0.448
         #Player Cards2: 0.879, 0.448
 
-        # Coordinates for all players (Number Position, Icon Position)
+        # Coordinates for all players (Number Position, Icon Position) aqui mirrar
         player_card_positions = {
-            1: [(0.440, 0.621), (0.501, 0.621)],  # Player 1
+            1: [(0.441, 0.621), (0.503, 0.621)],  # Player 1
             2: [(0.064, 0.448), (0.128, 0.448)],  # Player 2
             3: [(0.097, 0.153), (0.159, 0.153)],  # Player 3
             4: [(0.439, 0.062), (0.502, 0.062)],  # Player 4
@@ -857,7 +857,7 @@ class ReadPokerTable:
         for index, (num_x, num_y) in enumerate(player_card_positions[player_number], start=1):
             icon_x, icon_y = num_x, num_y + 0.032  # Adjust for icon position
             icon_width, icon_height = 20, 20  # Card icon dimensions
-            num_width, num_height = 21, 26    # Card number/letter dimensions
+            num_width, num_height = 20, 26    # Card number/letter dimensions
 
             # Process card suit
             card_filename = f"card{index}Icon_{datetime.now().strftime('%Y%m%d_%H%M%S')}.png"
@@ -867,12 +867,16 @@ class ReadPokerTable:
            
             
             card_suit = None
-            for suit, template in self.card_icon_templates.items():
-                result = cv2.matchTemplate(screenshot_icon_gray, template, cv2.TM_CCOEFF_NORMED)
-                _, max_val, _, _ = cv2.minMaxLoc(result)
-                if max_val > 0.9: 
-                    card_suit = suit
-                    #print(f"(Icon) for Player {player_number}, Card {index}: {card_suit}")
+            for threshold in [0.85, 0.82, 0.80, 0.77, 0.75, 0.72, 0.70, 0.65, 0.60, 0.55, 0.50, 0.45, 0.40, 0.35, 0.30, 0.25, 0.20, 0.15, 0.10, 0.05]:
+                for suit, template in self.card_icon_templates.items():
+                    result = cv2.matchTemplate(screenshot_icon_gray, template, cv2.TM_CCOEFF_NORMED)
+                    _, max_val, _, _ = cv2.minMaxLoc(result)
+
+                    if max_val > threshold:
+                        card_suit = suit
+                        print(f"(Icon) for Player {player_number}, Card {index}: {card_suit}")
+                        break
+                if card_suit is not None:
                     break
 
 
@@ -883,12 +887,15 @@ class ReadPokerTable:
             screenshot_num_gray = cv2.cvtColor(np.array(screenshot_num), cv2.COLOR_BGR2GRAY)
 
             card_rank = None
-            for rank, template in self.card_number_templates.items():
-                result = cv2.matchTemplate(screenshot_num_gray, template, cv2.TM_CCOEFF_NORMED)
-                _, max_val, _, _ = cv2.minMaxLoc(result)
-                if max_val > 0.9:
-                    card_rank = rank
-                    #print(f"(Rank) for Player {player_number}, Card {index}: {card_rank}")
+            for threshold in [0.85, 0.82, 0.80, 0.77, 0.75, 0.72, 0.70, 0.65, 0.60, 0.55, 0.50, 0.45, 0.40, 0.35, 0.30, 0.25, 0.20, 0.15, 0.10, 0.05]:
+                for rank, template in self.card_number_templates.items():
+                    result = cv2.matchTemplate(screenshot_num_gray, template, cv2.TM_CCOEFF_NORMED)
+                    _, max_val, _, _ = cv2.minMaxLoc(result)
+                    if max_val > threshold:
+                        card_rank = rank
+                        #print(f"(Rank) for Player {player_number}, Card {index}: {card_rank}")
+                        break
+                if card_suit is not None:
                     break
 
             if card_rank and card_suit:
@@ -933,18 +940,25 @@ class ReadPokerTable:
             x, y = icon_position
             num_x, num_y = number_position
             icon_width, icon_height = 20, 20  # Card icon dimensions
-            num_width, num_height = 20, 28    # Card number/letter dimensions
+            num_width, num_height = 25, 28    # Card number/letter dimensions
 
             # Capture and process card suit
+
+
             screenshot_icon = self.capture_screen_area(x, y, icon_width, icon_height)
             screenshot_icon_gray = cv2.cvtColor(np.array(screenshot_icon), cv2.COLOR_BGR2GRAY)
-            
+
+
+
             card_suit = None
-            for card_name, template in self.card_icon_templates.items():
-                result = cv2.matchTemplate(screenshot_icon_gray, template, cv2.TM_CCOEFF_NORMED)
-                _, max_val, _, _ = cv2.minMaxLoc(result)
-                if max_val > 0.9:
-                    card_suit = card_name
+            for threshold in [0.85, 0.82, 0.80, 0.77, 0.75, 0.72, 0.70, 0,65, 0.60, 0.55, 0.50, 0.45, 0.40, 0.35, 0.30, 0.25, 0.20, 0.15, 0.10, 0.05]:
+                for card_name, template in self.card_icon_templates.items():
+                    result = cv2.matchTemplate(screenshot_icon_gray, template, cv2.TM_CCOEFF_NORMED)
+                    _, max_val, _, _ = cv2.minMaxLoc(result)
+                    if max_val >threshold:
+                        card_suit = card_name
+                        break
+                if card_suit is not None:
                     break
 
             # Capture and process card number/letter using template matching
@@ -952,11 +966,17 @@ class ReadPokerTable:
             screenshot_num_gray = cv2.cvtColor(np.array(screenshot_num), cv2.COLOR_BGR2GRAY)
 
             card_rank = None
-            for rank, template in self.card_number_templates.items():
-                result = cv2.matchTemplate(screenshot_num_gray, template, cv2.TM_CCOEFF_NORMED)
-                _, max_val, _, _ = cv2.minMaxLoc(result)
-                if max_val > 0.9:
-                    card_rank = rank
+            for threshold in [0.85, 0.82, 0.80, 0.77, 0.75, 0.72, 0.70, 0,65, 0.60, 0.55, 0.50, 0.45, 0.40, 0.35, 0.30, 0.25, 0.20, 0.15, 0.10, 0.05]:
+                for rank, template in self.card_number_templates.items():
+                    result = cv2.matchTemplate(screenshot_num_gray, template, cv2.TM_CCOEFF_NORMED)
+
+
+
+                    _, max_val, _, _ = cv2.minMaxLoc(result)
+                    if max_val > threshold:
+                        card_rank = rank
+                        break
+                if card_suit is not None:
                     break
 
             if card_rank and card_suit:
@@ -1228,7 +1248,8 @@ class ReadPokerTable:
 
             self.detect_player_stack_and_action(4)
 
-            time.sleep(0.2)  
+
+            time.sleep(0.2)
 
     
     def continuous_detection_player_action5(self):
